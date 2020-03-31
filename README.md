@@ -10,10 +10,10 @@ Requires:
 See https://developers.google.com/calendar/quickstart/js
 
 ## Resources
-https://github.com/google/google-api-javascript-client/blob/master/docs/start.md
-https://github.com/google/google-api-javascript-client/blob/master/docs/auth.md
-https://developers.google.com/calendar/v3/reference/events/insert#try-it
-https://console.cloud.google.com/apis/credentials?project=<PROJECT_NAME>
+- https://github.com/google/google-api-javascript-client/blob/master/docs/start.md
+- https://github.com/google/google-api-javascript-client/blob/master/docs/auth.md
+- https://developers.google.com/calendar/v3/reference/events/insert#try-it
+- https://console.cloud.google.com/apis/credentials?project=<PROJECT_NAME>
 
 ## Credits
 - End session sound: http://soundbible.com/2158-Text-Message-Alert-5.html
