@@ -133,6 +133,7 @@
       const API_KEY = '<API_KEY>';
       const GCAL_ID = '<CALENDAR_ID>@group.calendar.google.com'; // or 'primary' for default calendar
       const GCAL_TIMEZONE = 'Europe/Helsinki'; // See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+      const BREAK_MINUTES = 5;
 
       // Array of API discovery doc URLs for APIs used by the quickstart
       const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
@@ -235,7 +236,7 @@
        *  Start the pomodoro timer
        */
       startPomodoro = () => {
-        clearAllSounds();
+        stopBreak();
 
         document.querySelector('#response').innerHTML = 'Pomodoro started.';
 
@@ -283,6 +284,36 @@
         document.querySelector('#startPomodoro').removeAttribute('disabled');
 
         insertEvent();
+      }
+
+      /**
+      *  Start break.
+      **/
+      startBreak = () => {
+        if(document.querySelector('#pom-break').checked) {
+          document.querySelector('#response').innerHTML = 'Break time...';
+          startTime = new Date();
+          playTickingSound(5);
+          timeLeftTimer = setInterval(updateTimeLeft, 1000);
+          timer = setTimeout(stopBreak, BREAK_MINUTES * 60 * 1000);
+        }
+      }
+
+      /**
+      *  Stop break.
+      **/
+      stopBreak = () => {
+        document.querySelector('#response').innerHTML = 'Break has ended.';
+
+        if(timer != null) {
+          clearInterval(timer);
+        }
+        if(timeLeftTimer != null) {
+          clearInterval(timeLeftTimer);
+        }
+
+        clearAllSounds();
+        stopTickingSound();
       }
 
       /**
@@ -370,12 +401,7 @@
           function(response) {
             document.querySelector('#response').innerHTML = '🍅 inserted.';
 
-            if(document.querySelector('#pom-break').checked) {
-              document.querySelector('#response').innerHTML = 'Break started.';
-              startTime = new Date();
-              tickingSoundTimer = setTimeout(playTickingSound, 1000, 5);
-              timeLeftTimer = setInterval(updateTimeLeft, 1000);
-            }
+            startBreak();
           },
           function(error) {
             console.error(error);
