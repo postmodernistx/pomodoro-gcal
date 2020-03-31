@@ -236,7 +236,7 @@
        */
       startPomodoro = () => {
         clearAllSounds();
-        
+
         document.querySelector('#response').innerHTML = 'Pomodoro started.';
 
         pomTitle = document.querySelector('#pom-title').value;
@@ -251,7 +251,7 @@
         document.querySelector('#stopPomodoro').removeAttribute('disabled');
 
         if(playTickSound.checked) {
-         setTimeout(playTickingSound, 1000, timeValue);
+         tickingSoundTimer = setTimeout(playTickingSound, 1000, timeValue);
         }
 
         timeLeftTimer = setInterval(updateTimeLeft, 1000);
@@ -369,7 +369,7 @@
 
             if(document.querySelector('#pom-break').checked) {
               document.querySelector('#response').innerHTML = 'Break started.';
-              setTimeout(playTickingSound, 1000, 5);
+              tickingSoundTimer = setTimeout(playTickingSound, 1000, 5);
             }
           },
           function(error) {
