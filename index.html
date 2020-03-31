@@ -149,6 +149,8 @@
       let timer = null;
       let timeLeftTimer = null;
       let pomodoroTime = 0;
+      let tickingSoundTimer = null;
+      let signalSoundTimer = null;
       const playTickSound = document.querySelector('#pom-sound');
       const tickSound = document.querySelector('#ticksound');
       const pomEndSound = document.querySelector('#pomendsound');
@@ -233,6 +235,8 @@
        *  Start the pomodoro timer
        */
       startPomodoro = () => {
+        clearAllSounds();
+        
         document.querySelector('#response').innerHTML = 'Pomodoro started.';
 
         pomTitle = document.querySelector('#pom-title').value;
@@ -266,7 +270,7 @@
           clearInterval(timeLeftTimer);
         }
 
-        tickSound.pause();
+        stopTickingSound();
 
         if(playTickSound.checked) {
           playSignalSound();
@@ -290,18 +294,32 @@
       }
 
       /**
+      *  Reset all sound timers
+      **/
+      clearAllSounds = () => {
+        if(tickingSoundTimer != null) {
+          clearInterval(tickingSoundTimer);
+        }
+        if(signalSoundTimer != null) {
+          clearInterval(signalSoundTimer);
+        }
+      }
+
+      /**
        * Play ticking sound for a given duration.
        *
        * @param {int} minutes Minutes for how long to play the sound.
        */
       playTickingSound = (minutes) => {
+        clearAllSounds();
+
         tickSound.muted = false;
         tickSound.loop = true;
         tickSound.currentTime = 0;
         tickSound.play();
 
-        setTimeout(stopTickingSound, 60 * 1000 * minutes);
-        setTimeout(playSignalSound, 60 * 1000 * minutes);
+        tickingSoundTimer = setTimeout(stopTickingSound, 60 * 1000 * minutes);
+        signalSoundTimer = setTimeout(playSignalSound, 60 * 1000 * minutes);
       }
 
       /**
@@ -309,6 +327,7 @@
        */
       stopTickingSound = () => {
         tickSound.pause();
+        clearAllSounds();
       }
 
       /**
