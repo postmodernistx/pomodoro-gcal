@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pomodoro</title>
+    <meta charset="utf-8" />
+    <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+      body {
+        background-color: rgb(226, 128, 119);
+        color: rgb(29, 21, 14);
+        font-family: 'Fredoka One', cursive;
+        line-height: 2;
+      }
+
+      .pompom {
+        max-width: 500px;
+        width: 90%;
+        margin: 0 auto;
+        background-color: #fff;
+        border-radius: 20px;
+        box-sizing: border-box;
+        padding: 30px;
+        border: 4px solid rgb(147, 190, 161);
+        box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.5);
+        position: relative;
+      }
+
+      h1 {
+        font-family: 'Abril Fatface', cursive;
+        margin: 20px;
+        text-align: center;
+        line-height: 1;
+      }
+
+      button {
+        border: 0;
+        border-radius: 5px;
+        color: #fff;
+        background-color: rgb(147, 190, 161);
+        font-family: 'Fredoka One';
+        font-size: 1em;
+        letter-spacing: 2px;
+        padding: 10px;
+        margin-top: 10px;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      button[disabled="true"] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .authbtns {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+      .authbtns button {
+        background-color: rgb(189, 56, 46);
+      }
+
+      input[type="text"], input[type="number"] {
+        font-family: 'Fredoka One', cursive;
+        font-size: 1em;
+        border-bottom: 3px solid rgb(0, 0, 0);
+        transition: all 0.3s;
+        border-top: 0;
+        border-left: 0;
+        border-right: 0;
+        margin-bottom: 20px;
+        background-color: rgb(253, 246, 195);
+        padding: 10px;
+      }
+      input[type="text"]:focus, input[type="number"]:focus {
+        outline: 0;
+        border-bottom: 3px solid rgb(189, 56, 46);
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .pomodoro-picture {
+        position: absolute;
+        bottom: -30px;
+        max-width: 180px;
+        right: -40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="authbtns" id="authbtns">
+      <button id="authorize_button" style="display: none;">Authorize</button>
+      <button id="signout_button" style="display: none;">Sign Out</button>
+    </div>
+
+    <div id="pompom" class="pompom" style="display: none;">
+
+      <h1>Pomodoro</h1>
+
+      <div class="pomodoro-details">
+        <div id="pom-current-details"></div>
+        <input type="text" id="pom-title" placeholder="Pomodoro name" /><br/>
+        <input type="number" id="pom-time" value="25" placeholder="Minutes" /> min<br/>
+        <label for="pom-sound">Ticking?</label> <input type="checkbox" id="pom-sound" checked />
+        <label for="pom-break">5 min break?</label> <input type="checkbox" id="pom-break" id="pom-break" checked /><br/>
+        <button onclick="startPomodoro()" id="startPomodoro">Start</button>
+        <button onclick="stopPomodoro()" disabled="true" id="stopPomodoro">Stop</button>
+      </div>
+
+      <div id="response"></div>
+
+      <audio id="ticksound">
+        <source src="tick2.mp3" type="audio/mpeg">
+      </audio>
+
+      <audio id="pomendsound">
+        <source src="pomend.mp3" type="audio/mpeg">
+      </audio>
+
+      <div class="pomodoro-picture">
+        <img src="tomato.png" alt="Tomato" />
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      // Client ID and API key from the Developer Console
+      const CLIENT_ID = '<CLIENT_ID>'; // E.g. someIdString.apps.googleusercontent.com
+      const API_KEY = '<API_KEY>';
+      const GCAL_ID = '<CALENDAR_ID>@group.calendar.google.com'; // or 'primary' for default calendar
+      const GCAL_TIMEZONE = 'Europe/Helsinki'; // See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+
+      // Array of API discovery doc URLs for APIs used by the quickstart
+      const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+
+      // Authorization scopes required by the API; multiple scopes can be
+      // included, separated by spaces.
+      const SCOPES = "https://www.googleapis.com/auth/calendar.events";
+
+      const authorizeButton = document.getElementById('authorize_button');
+      const signoutButton = document.getElementById('signout_button');
+
+      let pomTitle = '';
+      let startTime = '';
+      let timer = null;
+      const playTickSound = document.querySelector('#pom-sound');
+      const tickSound = document.querySelector('#ticksound');
+      const pomEndSound = document.querySelector('#pomendsound');
+
+      /**
+       *  On load, called to load the auth2 library and API client library.
+       */
+      function handleClientLoad() {
+        gapi.load('client:auth2', initClient);
+      }
+
+      /**
+       *  Initializes the API client library and sets up sign-in state
+       *  listeners.
+       */
+      initClient = () => {
+        gapi.client.init({
+          apiKey: API_KEY,
+          clientId: CLIENT_ID,
+          discoveryDocs: DISCOVERY_DOCS,
+          scope: SCOPES
+        }).then(function () {
+          // Listen for sign-in state changes.
+          gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+
+          // Handle the initial sign-in state.
+          updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+          authorizeButton.onclick = handleAuthClick;
+          signoutButton.onclick = handleSignoutClick;
+        }, function(error) {
+          appendPre(JSON.stringify(error, null, 2));
+        });
+      }
+
+      /**
+       *  Called when the signed in status changes, to update the UI
+       *  appropriately. After a sign-in, the API is called.
+       */
+      updateSigninStatus = (isSignedIn) => {
+        if (isSignedIn) {
+          authorizeButton.style.display = 'none';
+          signoutButton.style.display = 'block';
+          // listUpcomingEvents();
+          showPomodoroWhenAuthed();
+        } else {
+          authorizeButton.style.display = 'block';
+          signoutButton.style.display = 'none';
+          hidePomodoroWhenUnauthed();
+        }
+      }
+
+      /**
+       *  Sign in the user upon button click.
+       */
+      handleAuthClick = (event) => {
+        gapi.auth2.getAuthInstance().signIn();
+      }
+
+      /**
+       *  Sign out the user upon button click.
+       */
+      handleSignoutClick = (event) => {
+        gapi.auth2.getAuthInstance().signOut();
+      }
+
+      /**
+       *  Show pomorodo block when user is signed in.
+       */
+      showPomodoroWhenAuthed = () => {
+        document.querySelector('#pompom').style.display = 'block';
+      }
+
+      /**
+       *  Hide pomorodo block when user is signed out.
+       */
+      hidePomodoroWhenUnauthed = () => {
+       document.querySelector('#pompom').style.display = 'none'; 
+      }
+
+      /**
+       *  Start the pomodoro timer
+       */
+      startPomodoro = () => {
+        document.querySelector('#response').innerHTML = 'Pomodoro started.';
+
+        pomTitle = document.querySelector('#pom-title').value;
+
+        var timeValue = document.querySelector('#pom-time').value;
+        timer = setTimeout(stopPomodoro, 1000 * 60 * timeValue);
+
+        startTime = new Date();
+
+        document.querySelector('#startPomodoro').setAttribute('disabled', 'true');
+        document.querySelector('#stopPomodoro').removeAttribute('disabled');
+
+        if(playTickSound.checked) {
+         setTimeout(playTickingSound, 1000, timeValue);
+        }
+      }
+
+      /**
+       *  Stop the pomodoro timer (prematurely).
+       */
+      stopPomodoro = () => {
+        document.querySelector('#response').innerHTML = 'Pomodoro stopped.';
+
+        if(timer != null) {
+          clearInterval(timer);
+        }
+
+        tickSound.pause();
+
+        if(playTickSound.checked) {
+          playSignalSound();
+        }
+
+        document.querySelector('#stopPomodoro').setAttribute('disabled', 'true');
+        document.querySelector('#startPomodoro').removeAttribute('disabled');
+
+        insertEvent();
+      }
+
+      /**
+       * Play ticking sound for a given duration.
+       *
+       * @param {int} minutes Minutes for how long to play the sound.
+       */
+      playTickingSound = (minutes) => {
+        tickSound.muted = false;
+        tickSound.loop = true;
+        tickSound.currentTime = 0;
+        tickSound.play();
+
+        setTimeout(stopTickingSound, 60 * 1000 * minutes);
+        setTimeout(playSignalSound, 60 * 1000 * minutes);
+      }
+
+      /**
+       * Stops the ticking sound.
+       */
+      stopTickingSound = () => {
+        tickSound.pause();
+      }
+
+      /**
+       * Play signal sound (session ended).
+       */
+      playSignalSound = () => {
+        pomEndSound.currentTime = 0;
+        pomEndSound.play();
+      }
+
+      /**
+       * Insert the event into the calendar.
+       */
+      insertEvent = () => {
+        document.querySelector('#response').innerHTML = 'Adding 🍅 to calendar ...';
+
+        const endTime = new Date();
+        let _endTime = `${endTime.getFullYear()}-${String(endTime.getMonth()+1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}:${String(endTime.getSeconds()).padStart(2, '0')}.0`;
+
+        let _startTime = `${startTime.getFullYear()}-${String(startTime.getMonth()+1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}T${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}:${String(startTime.getSeconds()).padStart(2, '0')}.0`;
+
+        gapi.client.calendar.events.insert({
+          'calendarId': GCAL_ID,
+          'resource': {
+            'summary': pomTitle,
+            'start': {
+              'dateTime': _startTime,
+              'timeZone': GCAL_TIMEZONE
+            },
+            'end': {
+              'dateTime': _endTime,
+              'timeZone': GCAL_TIMEZONE
+            }
+          }
+        })
+        .then(
+          function(response) {
+            document.querySelector('#response').innerHTML = '🍅 inserted.';
+
+            if(document.querySelector('#pom-break').checked) {
+              document.querySelector('#response').innerHTML = 'Break started.';
+              setTimeout(playTickingSound, 1000, 5);
+            }
+          },
+          function(error) {
+            console.error(error);
+          }
+        );
+      }
+
+    </script>
+
+    <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()"></script>
+    
+  </body>
+</html>
