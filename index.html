@@ -254,6 +254,9 @@
          tickingSoundTimer = setTimeout(playTickingSound, 1000, timeValue);
         }
 
+        if(timeLeftTimer != null) {
+          clearInterval(timeLeftTimer);
+        }
         timeLeftTimer = setInterval(updateTimeLeft, 1000);
       }
 
@@ -369,7 +372,9 @@
 
             if(document.querySelector('#pom-break').checked) {
               document.querySelector('#response').innerHTML = 'Break started.';
+              startTime = new Date();
               tickingSoundTimer = setTimeout(playTickingSound, 1000, 5);
+              timeLeftTimer = setInterval(updateTimeLeft, 1000);
             }
           },
           function(error) {
