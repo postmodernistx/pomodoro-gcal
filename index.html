@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <style>
       body {
         background-color: rgb(226, 128, 119);
@@ -112,17 +112,18 @@
       </div>
 
       <div id="response"></div>
+      <div id="timeleft"></div>
 
       <audio id="ticksound">
-        <source src="tick2.mp3" type="audio/mpeg">
+        <source src="assets/tick2.mp3" type="audio/mpeg">
       </audio>
 
       <audio id="pomendsound">
-        <source src="pomend.mp3" type="audio/mpeg">
+        <source src="assets/pomend.mp3" type="audio/mpeg">
       </audio>
 
       <div class="pomodoro-picture">
-        <img src="tomato.png" alt="Tomato" />
+        <img src="assets/tomato.png" alt="Tomato" />
       </div>
     </div>
 
@@ -146,9 +147,12 @@
       let pomTitle = '';
       let startTime = '';
       let timer = null;
+      let timeLeftTimer = null;
+      let pomodoroTime = 0;
       const playTickSound = document.querySelector('#pom-sound');
       const tickSound = document.querySelector('#ticksound');
       const pomEndSound = document.querySelector('#pomendsound');
+      const timeleft = document.querySelector('#timeleft');
 
       /**
        *  On load, called to load the auth2 library and API client library.
@@ -234,7 +238,8 @@
         pomTitle = document.querySelector('#pom-title').value;
 
         var timeValue = document.querySelector('#pom-time').value;
-        timer = setTimeout(stopPomodoro, 1000 * 60 * timeValue);
+        pomodoroTime = 1000 * 60 * timeValue;
+        timer = setTimeout(stopPomodoro, pomodoroTime);
 
         startTime = new Date();
 
@@ -244,6 +249,8 @@
         if(playTickSound.checked) {
          setTimeout(playTickingSound, 1000, timeValue);
         }
+
+        timeLeftTimer = setInterval(updateTimeLeft, 1000);
       }
 
       /**
@@ -254,6 +261,9 @@
 
         if(timer != null) {
           clearInterval(timer);
+        }
+        if(timeLeftTimer != null) {
+          clearInterval(timeLeftTimer);
         }
 
         tickSound.pause();
@@ -266,6 +276,17 @@
         document.querySelector('#startPomodoro').removeAttribute('disabled');
 
         insertEvent();
+      }
+
+      /**
+       *  Update elapsed time.
+       */
+      updateTimeLeft = () => {
+        const now = new Date();
+        const msDiff = now - startTime;
+        const seconds = Math.floor((msDiff % 60000) / 1000);
+        const minutes = Math.floor(msDiff / 60000);
+        timeleft.innerHTML = `Elapsed: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
       }
 
       /**
