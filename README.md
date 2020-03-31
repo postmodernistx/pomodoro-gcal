@@ -9,6 +9,8 @@ Requires:
 - API key
 See https://developers.google.com/calendar/quickstart/js
 
+![Screenshot](/screenshot.png?raw=true "Screenshot")
+
 ## Resources
 - https://github.com/google/google-api-javascript-client/blob/master/docs/start.md
 - https://github.com/google/google-api-javascript-client/blob/master/docs/auth.md
