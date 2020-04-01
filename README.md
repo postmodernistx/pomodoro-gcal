@@ -1,4 +1,4 @@
-# Pomdoro tracker with JavaScript Google Calendar integration
+# Pomodoro tracker with JavaScript Google Calendar integration
 Small & quick web page that:
 
 - Plays a ticking sound for a set period of time
